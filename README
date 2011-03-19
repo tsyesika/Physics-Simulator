@@ -1,0 +1,24 @@
+--- Physics Simulator ---
+
+This simulator is only very basic, it began coding it to get a better
+understanding on some physical laws as well as getting to know pygame a little better. 
+
+
+Deps:
+
+- Python 2.5 - 2.7
+- pygame
+
+Install:
+
+python simulator.py
+
+
+Bugs: 
+
+Please contact me on my IRC channel on MegNET (irc.megworld.co.uk)
+#megworld
+
+My nick is Jessica_lily or xray7224
+
+
