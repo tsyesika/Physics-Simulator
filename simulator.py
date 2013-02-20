@@ -31,23 +31,19 @@ class Item():
         """ Validates that it's not colided with the wall """
         # x validate
         if self.p[0] <= 0:
-            self.debug("Oh dear, we've hit the side (volocity %s)" % self.xvel)
             self.p[0] = 0
             self.xvel *= -0.5
         elif self.p[0] > self.calculate_side():
-            self.debug("Oh dear, we've hit the side (volocity %s)" % self.xvel)
             self.p[0] = self.calculate_side()
             self.xvel *= -0.5
         
         # y validate
         if self.p[1] <= 0:
             # top
-            self.debug("Oh dear, we've hit the top (volocity %s)" % self.yvel)
             self.p[1] = 0
             self.yvel *= -0.5
         elif self.p[1] > self.calculate_base():
             # bottom
-            self.debug("Oh dear, we've hit the bottom (volocity %s)" % self.yvel)
             self.p[1] = self.calculate_base()
             self.yvel *= -0.5
     
@@ -65,6 +61,24 @@ class Item():
         """ Calculates the right side of the object """
         return width - self.p[2]
 
+    def clicked(self, pos):
+        """ Returns if the block has been clicked on """
+        if pos[0] < self.p[0]:
+            return False
+
+        # pointer is on or below block
+        if pos[0] > (self.p[1] + self.p[2]):
+            return False
+        
+        # now need to check the x axis
+        if pos[1] < self.p[1]:
+            return False
+        
+        if pos[1] > (self.p[1] + self.p[3]):
+            return False
+       
+        return True # yay!
+
 class Block(Item):
     def __init__(self):
         self.mass = 5
@@ -75,7 +89,6 @@ class Block(Item):
         """Draws block"""
         self.apply_volocity()
         self.validate()
-        self.debug("Current position is %s" % self.p)
         pygame.draw.rect(screen, (0, 255, 0), tuple(self.p))
    
 
@@ -87,9 +100,7 @@ class Block(Item):
                 self.ydiff = self.weight
             self.xvel += self.xdiff
             self.yvel += self.ydiff
-            self.debug("Applying diffs to velocity xdiff:%s, ydiff:%s" % (self.xdiff, self.ydiff))
  
-        self.debug("applying volocity x:%s, y:%s" % (self.xvel, self.yvel))
         
         # apply volocity
         self.p[0] += self.xvel
@@ -107,7 +118,6 @@ _END = False
 ##
 # Object instansiation
 ##
-
 object_list = [Block()]
 object_list[0].p = [200, 200, 100, 100]
 while not _END:
@@ -145,10 +155,17 @@ while not _END:
     ##
     screen.fill((0,0,0))
     
+    r_mouse_button = pygame.mouse.get_pressed()[0]   
+    if r_mouse_button:
+        mouse_position = pygame.mouse.get_pos()
+
     #Make sure gravity is good stuff :P
     for item in object_list:
-         
-        #DRAW SHIZZLE
+        if r_mouse_button:
+            # okay the right mouse button has been pressed
+            item.clicked(mouse_position)
+            if starting_
+            
         item.show()
 
 
