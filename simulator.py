@@ -1,10 +1,13 @@
 import pygame, time, random, sys
 from pygame.locals import *
 
+# World size
+width = 500
+height = 500
 
 #SETUP
 pygame.init()
-screen = pygame.display.set_mode((672, 672))
+screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Physics Simulator")
 
 #GLOBALS
@@ -17,62 +20,87 @@ p = [50, 50, 100, 100]
 
 
 # Objects
-class Block():
+class Item():
+    mass = 1
+    xvel = 0
+    yvel = 0
+    weight = gravity * mass
+    p = [50, 50, 100, 100]
+
+    def validate(self):
+        """ Validates that it's not colided with the wall """
+        # x validate
+        if self.p[0] <= 0:
+            self.debug("Oh dear, we've hit the side (volocity %s)" % self.xvel)
+            self.p[0] = 0
+            self.xvel *= -0.5
+        elif self.p[0] > self.calculate_side():
+            self.debug("Oh dear, we've hit the side (volocity %s)" % self.xvel)
+            self.p[0] = self.calculate_side()
+            self.xvel *= -0.5
+        
+        # y validate
+        if self.p[1] <= 0:
+            # top
+            self.debug("Oh dear, we've hit the top (volocity %s)" % self.yvel)
+            self.p[1] = 0
+            self.yvel *= -0.5
+        elif self.p[1] > self.calculate_base():
+            # bottom
+            self.debug("Oh dear, we've hit the bottom (volocity %s)" % self.yvel)
+            self.p[1] = self.calculate_base()
+            self.yvel *= -0.5
+    
+    def debug(self, message):
+        if Debug:
+            print "[debug] %s" % message
+
+    def calculate_base(self):
+        """ Calculates the base of the object """
+        bottom_item = height - self.p[3]
+        base = bottom_item
+        return base
+    
+    def calculate_side(self):
+        """ Calculates the right side of the object """
+        return width - self.p[2]
+
+class Block(Item):
     def __init__(self):
-        self.p = [50, 50, 100, 100]
-        self.mass = 50000
-        self.yvel = 0
-        self.xvel = 0
+        self.mass = 5
         self.ydiff = 0
         self.xdiff = 0
     
     def show(self):
         """Draws block"""
         self.apply_volocity()
+        self.validate()
+        self.debug("Current position is %s" % self.p)
         pygame.draw.rect(screen, (0, 255, 0), tuple(self.p))
-    
-    def cal_vel(self):
-        """ Calculates next position """
-        if self.p[1] > 572:
-            self.p[1] = 572
-            self.p[1] *= -0.5
-        elif self.p[1] < 0:
-            self.p[1] = 0
-        else:
-            self.yvel += gravity
+   
 
     def apply_volocity(self):
-            l_mouse_press, m_mouse_press, r_mouse_press = pygame.mouse.get_pressed()
-            l_mouse_pos, r_mouse_pos = pygame.mouse.get_pos()
-            if not (o.ydiff or o.xdiff) and l_mouse_press:
-                o.xdiff = l_mouse_pos
-                o.ydiff = r_mouse_pos
-            elif not l_mouse_press and (o.xdiff or o.ydiff):
-                try:
-                    o.xvel = (l_mouse_press - o.xdiff) / o.mass
-                except ZeroDivisionError:
-                    o.xvel = 0
-                try:
-                    o.yvel = ((l_mouse_press - o.ydiff) / o.mass) + o.yvel
-                except ZeroDivisionError:
-                    o.yvel = 0
-                    o.xdiff = 0
-                    o.ydiff = 0
-
-            # should we be applying gravity?
-            if not l_mouse_press:
-                # oh why yes we should :)
-                self.cal_vel()
-                o.p[0] += o.xvel
-                o.p[1] += o.yvel
-
-
-##          
+        if Gravity:
+            # okay gravity is on, lets apply it!
+            if not (self.ydiff or self.xdiff):
+                self.debug("setting the ydiff = %s" % self.weight)
+                self.ydiff = self.weight
+            self.xvel += self.xdiff
+            self.yvel += self.ydiff
+            self.debug("Applying diffs to velocity xdiff:%s, ydiff:%s" % (self.xdiff, self.ydiff))
+ 
+        self.debug("applying volocity x:%s, y:%s" % (self.xvel, self.yvel))
+        
+        # apply volocity
+        self.p[0] += self.xvel
+        self.p[1] += self.yvel
+##      
 # Settings
 ##
 
 Friction = True
 Gravity = True
+Debug = False
 
 _END = False
 
@@ -101,6 +129,13 @@ while not _END:
             elif event.key == K_q:
                 _END = True
                 break
+            elif event.key == K_d:
+                if Debug:
+                    print "Turning debug mode off"
+                    Debug = False
+                else:
+                    print "Turning debug mode on"
+                    Debug = True
     if _END:
         break
 
@@ -111,47 +146,13 @@ while not _END:
     screen.fill((0,0,0))
     
     #Make sure gravity is good stuff :P
-    for i in range(len(object_list)):
-        o = object_list[i]
-        if not (o.ydiff or o.xdiff) and pygame.mouse.get_pressed()[0]:
-            o.xdiff = pygame.mouse.get_pos()[0]
-            o.ydiff = pygame.mouse.get_pos()[1]
-        elif not pygame.mouse.get_pressed()[0] and (o.xdiff or o.ydiff):
-            try:
-                o.xvel = (pygame.mouse.get_pos()[0] - o.xdiff) / o.mass
-            except ZeroDivisionError:
-                o.xvel = 0
-            try:
-                o.yvel = ((pygame.mouse.get_pos()[0] - o.ydiff) / o.mass) + o.yvel
-            except ZeroDivisionError:
-                o.yvel = 0
-            o.xdiff = 0
-            o.ydiff = 0
-
-        # Calculate weight
-
-        mpos = pygame.mouse.get_pos()
-        cond = pygame.mouse.get_pressed()[0]
-        
-        
-        #Allows you to pick blocks up
-        if cond and (mpos[0] > o.p[0]-1 and mpos[0] <= o.p[0] + 150) and (mpos[1] > o.p[1]-1 and mpos[1] <= o.p[1]+150): 
-            #clicked mouse over box
-            o.p[0] = pygame.mouse.get_pos()[0] - (o.p[2] / 2)
-            if o.p[0] != pygame.mouse.get_pos()[1]:
-                #applied force on x
-                try:
-                    o.xvel = (o.p[0] / pygame.mouse.get_pos()[1]) / o.mass
-                except ZeroDivisionError:
-                    o.xvel = 0
-            o.p[1] = pygame.mouse.get_pos()[1] - (o.p[3] / 2)
-            
-                
+    for item in object_list:
+         
         #DRAW SHIZZLE
-        o.show()
+        item.show()
 
 
     pygame.display.flip()
-    clock.tick(150)
+    clock.tick(60)
 
 pygame.quit()
